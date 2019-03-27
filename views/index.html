@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+
+{% block title %}{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="//localhost:3000/css/style.css">
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="//localhost:3000/js/index.js"></script>
+{% endblock %}
+
+{% block id %}index{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>{{ title }}</h1>
+        <p>Welcome to {{ title }}</p>
+    </div>
+{% endblock %}

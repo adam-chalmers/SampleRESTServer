@@ -1,0 +1,7 @@
+h1 {
+  font-size: 30px; }
+
+#index .container {
+  text-align: center; }
+  #index .container h1 {
+    color: blue; }
