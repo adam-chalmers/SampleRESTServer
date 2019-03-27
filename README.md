@@ -385,7 +385,7 @@ body .container h1 {
     color: red;
 }
 ```
-Having to repeate the body and .container selectors each time can get tedious, especially when there are many child elements that you want to style. Sass makes this much easier:
+Having to repeat the body and .container selectors each time can get tedious, especially when there are many child elements that you want to style. Sass makes this much easier:
 ```
 body {
     background: black;
@@ -435,10 +435,10 @@ This would make all divs white on devices with a width of at least 800px, and bl
 
 Partials are another great tool, allowing you to separate out your files, but still have them compile down to a single .css file. Let's say we have two files, one for general CSS that should be applied to all pages, and another for CSS that should only be applied to individual pages. We can use a master .scss file, and import all our other .scss files, resulting in a single .css file after compilation.
 ```
-@import 'general.scss';
-@import 'pages.scss';
+@import '_general.scss';
+@import '_pages.scss';
 ```
-Note that with the above setup, we'd be able to define variables in our general.scss file, and have them available to the pages.scss file because the general.scss file is compiled first. This would allow you to set up standard fonts and colours for your site in one place, but still reference them across all scss files.
+Note that with the above setup, we'd be able to define variables in our general.scss file, and have them available to the _pages.scss file because the _general.scss file is compiled first. This would allow you to set up standard fonts and colours for your site in one place, but still reference them across all scss files. Note also the underscores preceeding the partial file filenames - these tell sass that these files shouldn't be compiled into files themselves.
 
 ## Using SASS
 
@@ -446,9 +446,9 @@ First of all, we're going to want sass:
 ```
 npm install -g node-sass
 ```
-We're using -g here to install it globally, and make node-sass available on the command line. (Note that it will be installed to %appdata%/npm, which should also have been added to your user environment variables. If you're getting errors saying node-sass wasn't found, try restarting your pc.).
+We're using -g here to install it globally, and make node-sass available on the command line. (Note that it will be installed to %appdata%/npm, which should also have been added to your user environment variables. If you're getting errors saying node-sass wasn't found, try restarting your pc).
 
-Create a new folder in the application root, called 'scss'. Here's where we're going to store our sass files. We'll be creating three: style.scss, _general.scss and _pages.scss. Note that we've left the scss folder outside of the public folder, as we don't need to serve our sass files to clients - only the compiled css file is required. Note also the underscores preceeding the partial file filenames - these tell sass that these files shouldn't be compiled into files themselves.
+Create a new folder in the application root, called 'scss'. Here's where we're going to store our sass files. We'll be creating three: style.scss, _general.scss and _pages.scss. Note that we've left the scss folder outside of the public folder, as we don't need to serve our sass files to clients - only the compiled css file is required.
 
 style.scss:
 ```
@@ -492,5 +492,5 @@ That just leaves compiling our sass into a css file. This is where installing no
 ```
 node-sass --recursive --watch ./scss --output ./public/css
 ```
-Now, every time a non-partial scss file (in our case, we only have one - style.scss) is modified, our sass is compiled into the output directory. This means we can make modifications to our scss files and simply refresh our pages to see the changes come through immediately.
+Now, every time a scss file is modified in the watch directory (./scss), our sass is compiled into the output directory. This means we can make modifications to our scss files and simply refresh our pages to see the changes come through immediately.
 We run this in a second terminal, since we may still want to use our first one for npm or other commands, and as long as the node-sass command is running, the terminal is unuseable. Note also that this watch command will need to be run every time vscode is started.
