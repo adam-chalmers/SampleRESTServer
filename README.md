@@ -492,5 +492,5 @@ That just leaves compiling our sass into a css file. This is where installing no
 ```
 node-sass --recursive --watch ./scss --output ./public/css
 ```
-Now, every time a scss file is modified in the watch directory (./scss), our sass is compiled into the output directory. This means we can make modifications to our scss files and simply refresh our pages to see the changes come through immediately.
+Now, every time a scss file is modified in the watch directory (./scss), our sass is compiled into the output directory (./public/css). This means we can make modifications to our scss files and simply refresh our pages to see the changes come through immediately.
 We run this in a second terminal, since we may still want to use our first one for npm or other commands, and as long as the node-sass command is running, the terminal is unuseable. Note also that this watch command will need to be run every time vscode is started.
