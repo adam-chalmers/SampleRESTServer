@@ -494,3 +494,192 @@ node-sass --recursive --watch ./scss --output ./public/css
 ```
 Now, every time a scss file is modified in the watch directory (./scss), our sass is compiled into the output directory (./public/css). This means we can make modifications to our scss files and simply refresh our pages to see the changes come through immediately.
 We run this in a second terminal, since we may still want to use our first one for npm or other commands, and as long as the node-sass command is running, the terminal is unuseable. Note also that this watch command will need to be run every time vscode is started.
+
+
+## Promises
+
+Before we move on to the next section, we need to understand Promises, and how they tie in with asynchronous methods. In node, it's quite common to have methods that run asynchronously and take in a callback function that handles the result of the operation. That's all well and good, but what do we do if we want to wait for the callback to run and receive a value returned by that callback? We use a Promise. Promises are so named because they 'promise' to return a value (or throw an error). Promises are created with two arguments: a 'resolve' function pointer and a 'reject' function pointer. Calling the resolve function with an argument causes the Promise to return that value when awaited upon, and calling the reject function with an argument causes the Promise to throw that argument as an error.
+
+For example, if we wanted to log a console message after waiting a certain amount of time:
+```
+function wait(timeout) {
+    setTimeout(function() {
+        console.log(`Waited for ${timeout}ms`);
+    }, timeout);
+}
+```
+But that doesn't help if, instead of logging a console message, we wanted to return a the time that we wated for. That's where promises come in:
+```
+function wait(timeout) {
+    return new Promise(function(resolve, reject) {
+        setTimeout(function() {
+            resolve(timeout);
+        }, timeout);
+    });
+}
+
+async function doTheThing() {
+    let foo = await wait(10000);
+}
+```
+Note the use of the 'await' keyword above. Promises work somewhat like Tasks in C#, in that they can be awaited to retrieve their resolved value. Note also that, again like C#, the use of the 'await' keyword requires the containing function to be declared as 'async'.
+While we aren't using promises directly in our code (yet), it's still important to understand how they work, as some of the modules we use later on do return promises, and we'll be using async methods and awaiting on their results.
+
+
+## Authentication
+
+Let's say we wanted to require a login for users to be able to use our frontend, and needed a token of some kind to use our API. How would we achieve this? A simple way to do so would be to use JSON web tokens (JWTs). A JWT consists of three things: a header consisting of the algorithm and token type (in our case, JWT), a payload consisting of whatever data we choose, and a third portion for verification purposes (see https://jwt.io/ for more). JWTs are signed using a secret, meaning that any JWT created using your secret will always decode using the same secret.
+For the front end:
+ - Client submits credentials through a login page, using basic HTTP authentication header.
+ - Server verifies credentials, and responds with a JWT and a header that gets the browser to store the JWT as a cookie.
+ - Client can now access portions of the front-end which require authentication by passing the JWT with each call.
+For the API:
+ - Expose an API key for each user through the front-end.
+Once authentication starts becoming involved, we should be connecting to our server via SSL, to make sure that our credentials aren't being intercepted. This makes it a lot easier for us, because then we don't need to worry about doing any encrypting of the credentials on the client side before sending them through to the server. Setting up SSL isn't something that we need to worry about in our server code, and so is outside the scope of this tutorial since it depends on how you choose to host your server.
+
+## Credential
+
+For this tutorial, we'll be using a module called Credential (https://www.npmjs.com/package/credential).
+```
+npm install --save credential
+```
+Credential makes it easy to hash passwords, although the output is a little different to what you might be used to. Instead of just a hashed password string, Credential returns a JSON string containing the hashed password, the salt, and more. This string is then stored in the database. I'd suggest reading up on the page above, as it explains the rationale for why the module works in the way that it does.
+
+## Users
+
+Normally, we'd have a database that we'd store all our info in. For the purposes of this tutorial, we don't really need one and can come back to doing that at a later stage. For now, we'll create a module that simulates verifying a user's credentials against a database, but we'll hardcode a single user for our use. This should make it easier to come back to later on and put in proper database logic once we eventually get one set up. For now, we'll want to create a folder in the root directory called 'sql', and a file inside the new folder called 'users.js'.
+```
+const credential = require('credential')();
+
+const user = {
+    'id': 1,
+    'username': 'tutorial',
+    'administrator': true
+}
+hashPassword('password123').then(function(value) {
+    user.password = value;
+    console.log("User setup complete.");
+});
+
+function getUserByID(id) {
+    // TODO replace with database lookup
+    if (id === 1) return user;
+
+    return false;
+}
+
+function getUserByUsername(username) {
+    // TODO replace with database lookup
+    if (username === 'tutorial') return user;
+
+    return false;
+}
+
+async function hashPassword(password) {
+    return await credential.hash(password);
+}
+
+async function verifyPassword(hashed, password) {
+    return await credential.verify(hashed, password);
+}
+
+module.exports = {
+    'getUserByID': getUserByID,
+    'getUserByUsername': getUserByUsername,
+    'verifyPassword': verifyPassword
+};
+```
+Note that getUserByID and getUserByUsername would both normally access the database, but instead we simply check against our hardcoded user. False is returned when no match exists, so we can easily check for the 'truthiness' of the result of the query. Note also that we export the 'verifyPassword' function but not the 'hashPassword' function. This is essentially just a way to have public and private functions, as the latter function doesn't really need to be accessed outside of our module.
+Also of note is the way we initialise our user - since the user declaration isn't inside a function, it can't be declared async and we can't await on its value. We instead use the returned promise, and call a function after it completes that sets the user password to a password hash JSON string. We include a console log message here just for debug purposes so we know when server initialisation is fully complete.
+
+## Passport
+
+Now that we've set up our "database" and we have a way to check passwords and users, we need to have a way to have our endpoints require authentication. Here's where a module called Passport comes in handy. Using Passport, we can create an Express middleware that can authenticate using different strategies. We can then supply this middleware to our specific endpoints that we want to require authentication on. There are many more modules that can create middleware for other authentication strategies, such as OAuth 2.0, Facebook, Steam (OpenID) and more - see http://www.passportjs.org/packages/ for details.
+For our purposes, we'll want the following:
+```
+npm install --save passport
+npm install --save passport-http
+npm install --save passport-jwt
+```
+Create a new file in the application root, called 'passport.js'. To use Passport, we need to initialise authentication strategies and register them with Passport before we can use the middleware.
+```
+const passport = require('passport');
+const passportJWT = require('passport-jwt');
+const passportBasic = require('passport-http');
+
+const users = require('./sql/users');
+
+passport.serializeUser(function(user, done) {
+    // TODO create an object that is a subset of the full user object.
+    done(null, user);
+});
+
+passport.deserializeUser(async function(user, done) {
+    // TODO implement a database lookup using the user subset to return the full user object.
+    done(null, user);
+});
+
+const jwtArgs = {
+    'jwtFromRequest': passportJWT.ExtractJwt.fromAuthHeaderAsBearerToken(),
+    'secretOrKey': 'SECRET'
+}
+
+const basic = new passportBasic.BasicStrategy(basicAuth);
+const jwt = new passportJWT.Strategy(jwtArgs, jwtAuth);
+
+async function basicAuth(username, password, done) {
+    let user = users.getUserByUsername(username);
+    if (!user) return done(null, false);
+
+    let passwordMatches = await users.verifyPassword(user.password, password);
+    if (!passwordMatches) return done(null, false);
+
+    return done(null, user);
+}
+
+function jwtAuth(payload, done) {
+    let user = users.getUserByID(payload.ID);
+    if (!user) return done(null, false);
+
+    return done(null, user);
+}
+
+passport.use(basic);
+passport.use(jwt);
+
+module.exports = passport;
+```
+Several things of note above:
+ - Firstly, module exports are static, so this code will only ever be run once and a pointer to the same exported object is returned to any file that imports our module. Here, we import the regular passport module, set up our basic and jwt strategies, and then export the configured passport object for use throughout our application, without needing to worry about configuring it every time.
+ - Secondly, note that we're using a secret in our jwtArgs - this doesn't need to be anything special right now, but it's not particularly good practice to be storing these sorts of things in source code, if that source is ever going to be hosted outside of your network (as is our case here, on GitHub). We'll get back to how to remedy this in another part of this tutorial.
+ - In the 'basicAuth' and 'jwtAuth' functions, the 'done' argument is a function pointer that works somewhat like the resolve function pointer given to Promises. The first argument is an error, and the second is the result. In our cases above, we don't throw any errors, so we always pass null in as the first argument.
+
+To use passport, we also need to call an initialisation method in our app.js (note that the initialised passport object must be given to the app object before our endpoint routing is configured - see the full app.js file for the full setup):
+```
+...
+const passport = require('./passport');
+...
+app.use(passport.initialize());
+...
+```
+
+We can now start requiring authentication on our endpoints. We'll start off by using basic HTTP authorization on a new endpoint, by modifying /routes/api.js:
+```
+const passport = require('../passport');
+
+function routes(app) {
+    app.get('/api/test', test);
+
+    app.post('/api/postTest', postTest);
+
+    app.get('/api/authTest', passport.authenticate('basic'), authTest);
+}
+...
+function authTest(req, res) {
+    res.status(200).json({
+        'success': true,
+        'username': req.user.username
+    });
+}
+```
+And that's it. The authTest function will only be called if authentication was successful (ie. if the argument supplied to the 'done' function in the authentication strategy was truthy). If so, then the argument passed to the 'done' function (in our case, the full user object) is available on the req object under the key 'user'. As you can see in the example above, this means that we can inspect which user has called our protected endpoints, and we do so by returning the authenticated user's username. Having full access to the user object here will come in handy later on for our protected portions of the frontend.

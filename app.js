@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const swig = require('swig');
 
+const passport = require('./passport');
 const api = require('./routes/api');
 const views = require('./routes/views');
 
@@ -15,6 +16,8 @@ app.engine('html', engine.renderFile);
 app.set('view engine', 'html');
 app.use('/', express.static('public'));
 app.use(nocache);
+
+app.use(passport.initialize());
 
 api(app);
 views(app);

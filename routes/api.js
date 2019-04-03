@@ -1,7 +1,11 @@
+const passport = require('../passport');
+
 function routes(app) {
     app.get('/api/test', test);
 
     app.post('/api/postTest', postTest);
+
+    app.get('/api/authTest', passport.authenticate('basic'), authTest);
 }
 
 function test(req, res) {
@@ -26,6 +30,13 @@ function postTest(req, res) {
             'message': 'No message was present in the request body.'
         });
     }
+}
+
+function authTest(req, res) {
+    res.status(200).json({
+        'success': true,
+        'username': req.user.username
+    });
 }
 
 module.exports = routes;
