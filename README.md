@@ -188,7 +188,7 @@ Some things of note about the above code:
  - Javascript string interpolation works much like C#, but only works for strings that are defined using backtick characters (`), and won't work for strings defined using single or double quote characters.
  - Javascript compiles files in two stages. First, it does a pass for all variable declarations using the 'var' keyword, and then essentially moves all those variables to the top of the functions in which they are defined. This means that variables defined using the 'var' keyword can be used before they're even defined, and don't have scope within the method they're defined in. Variables defined using the 'let' keyword do have scope, and function as you'd expect variables do in C#. I don't see 'let' used as commonly, and I think it's a newer feature and may not be supported on all browsers. Same with the string interpolation in the previous point. They're fine to use server-side, since the code is always running in the same environment and compatibility isn't an issue, but it's risky to use these in client-side JS since you can't guarantee the browser running the code will support the features.
  
-Since we previously configured the api module to export the routes function, and we've configured our postTest endpoint inside the routes function, we don't need to changeanything more in our app.js file to be able to access our new endpoint. Since we've configured this new endpoint to use the POST method, we won't be able to use a browser totest it. Install Postman, and POST to http://localhost:3000/api/postTest with an empty body and you should get the 400 status back, with our failure message as before. This is because we didn't supply a message. Add a message to the body, and you should get the 200 status back, with our success message that displays what the input message in the body was.
+Since we previously configured the api module to export the routes function, and we've configured our postTest endpoint inside the routes function, we don't need to changeanything more in our app.js file to be able to access our new endpoint. Since we've configured this new endpoint to use the POST method, we won't be able to use a browser totest it. Install Postman, and POST to <SITE ROOT>/api/postTest with an empty body and you should get the 400 status back, with our failure message as before. This is because we didn't supply a message. Add a message to the body, and you should get the 200 status back, with our success message that displays what the input message in the body was.
 
 ## Views
 
@@ -215,34 +215,46 @@ npm install --save swig
 ```
 Then, create a folder named 'views', which is where we'll store our html templates.
 
-We'll start with a base layout template, called layout.html:
+We'll start with a base layout template under '/views/layout.html':
 ```
 <!DOCTYPE html>
 <html>
     <head>
+        {% set siteRoot = "<LOCAL IP HERE>:3000" %}
         <meta charset="utf-8">
-        <title>{{ title }}</title>
-        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}{% endblock %}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     </head>
-    <body>
-        {% block content %}
-        {% endblock %}
-        <script type="text/javascript" src="//code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <body id="{% block id %}{% endblock %}">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 d-flex justify-content-around">
+                    <h1>{% block title %}{% endblock %}</h1>
+                </div>
+            </div>
+            {% block content %}
+            {% endblock %}
+        </div>
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     </body>
 </html>
 ```
-The above template defines a head that contains the title and a link to bootstrap css, and a body that uses jQuery and bootstrap js, plus a block. The block is where the templating magic happens, as we'll see below in a file called index.html:
+The above template defines a head that contains the title and a link to bootstrap css, and a body that uses jQuery, boostrap's js and popper.js (all of which are required by bootstrap), plus several blocks. The blocks are where the templating magic happens, but first some notes on the above:
+ - We define a variable for our site root - this is so we can easily refer back to this across our site and replace it in one place if we move the domain. For example, when writing this, I started out using 'localhost:3000', but then found that the site wasn't working properly when I tested on my phone. So I then changed it to my local IP address so it would work on both, but you could host it on a server somewhere and use DDNS if you wanted.
+ - We include a viewport meta tag so that the site displays nicely on mobiles, nothing special.
+ - Blocks are essentially parts of the template that can be specified by any template that inherits this one. Our 'id' block allows inheriting templates to define their own IDs, so we can target specific pages with CSS if we want to. The 'title' block allows inheriting templates to define their own titles, and the 'content' block is where the majority of the page's content will be specified by child templates.
+
+Now that we have a base template, we can create '/views/index.html':
 ```
 {% extends 'layout.html' %}
 
-{% block title %}{% endblock %}
+{% block title %}Index Page{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>{{ title }}</h1>
-        <p>Welcome to {{ title }}</p>
-    </div>
+    <p>Welcome to {{ title }}</p>
 {% endblock %}
 ```
 This file defines content, which will be substituted into the content block defined in the layout template. It also defines a title block, which we'll get back to soon.
@@ -263,7 +275,7 @@ function routes(app) {
 }
 
 function index(req, res) {
-    res.status(200).render('../views/index', { title: 'Index Page' });
+    res.status(200).render('../views/index');
 }
 
 module.exports = routes;
@@ -295,7 +307,7 @@ body .container h1 {
 ```
 And add a link in our base layout template to our css:
 ```
-<link rel="stylesheet" href="//localhost:3000/css/style.css">
+<link rel="stylesheet" href="//{{ siteRoot }}/css/style.css">
 ```
 If we reload the index page, we should now see our own css take effect, with red header text.
 
@@ -307,7 +319,7 @@ jQuery(document).ready(function($) {
 ```
 And add a link in our base layout template to our js:
 ```
-<script type="text/javascript" src="//localhost:3000/js/index.js"></script>
+<script type="text/javascript" src="//{{ siteRoot }}/js/index.js"></script>
 ```
 Then when you reload the server and the page, you should see an alert pop up when you load the index page.
 
@@ -316,17 +328,27 @@ Of course, we didn't have to add these to the base layout. We could've just as e
 <!DOCTYPE html>
 <html>
     <head>
+        {% set siteRoot = "<LOCAL IP HERE>:3000" %}
         <meta charset="utf-8">
-        <title>{{ title }}</title>
-        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}{% endblock %}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
         {% block css %}
         {% endblock %}
     </head>
-    <body>
-        {% block content %}
-        {% endblock %}
-        <script type="text/javascript" src="//code.jquery.com/jquery-2.1.4.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <body id="{% block id %}{% endblock %}">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 d-flex justify-content-around">
+                    <h1>{% block title %}{% endblock %}</h1>
+                </div>
+            </div>
+            {% block content %}
+            {% endblock %}
+        </div>
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
         {% block js %}
         {% endblock %}
     </body>
@@ -336,7 +358,7 @@ This then allows us to specify our own css and js per page in the page templates
 ```
 {% extends 'layout.html' %}
 
-{% block title %}{% endblock %}
+{% block title %}Index Page{% endblock %}
 
 {% block css %}
     <link rel="stylesheet" href="//localhost:3000/css/style.css">
@@ -347,10 +369,7 @@ This then allows us to specify our own css and js per page in the page templates
 {% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>{{ title }}</h1>
-        <p>Welcome to {{ title }}</p>
-    </div>
+    <p>Welcome to {{ title }}</p>
 {% endblock %}
 ```
 
@@ -458,6 +477,10 @@ style.scss:
 
 _general.scss:
 ```
+body {
+    padding-top: 30px;
+}
+
 h1 {
     font-size: 30px;
 }
@@ -620,7 +643,7 @@ passport.deserializeUser(async function(user, done) {
 });
 
 const jwtArgs = {
-    'jwtFromRequest': passportJWT.ExtractJwt.fromAuthHeaderAsBearerToken(),
+    'jwtFromRequest': cookieExtractor,
     'secretOrKey': 'SECRET'
 }
 
@@ -644,15 +667,35 @@ function jwtAuth(payload, done) {
     return done(null, user);
 }
 
+function cookieExtractor(req) {
+    var token = null;
+    if (req && req.cookies) {
+        token = req.cookies['jwt'];
+    }
+    return token;
+}
+
 passport.use(basic);
 passport.use(jwt);
 
 module.exports = passport;
 ```
 Several things of note above:
- - Firstly, module exports are static, so this code will only ever be run once and a pointer to the same exported object is returned to any file that imports our module. Here, we import the regular passport module, set up our basic and jwt strategies, and then export the configured passport object for use throughout our application, without needing to worry about configuring it every time.
- - Secondly, note that we're using a secret in our jwtArgs - this doesn't need to be anything special right now, but it's not particularly good practice to be storing these sorts of things in source code, if that source is ever going to be hosted outside of your network (as is our case here, on GitHub). We'll get back to how to remedy this in another part of this tutorial.
+ - Module exports are static, so this code will only ever be run once and a pointer to the same exported object is returned to any file that imports our module. Here, we import the regular passport module, set up our basic and jwt strategies, and then export the configured passport object for use throughout our application, without needing to worry about configuring it every time.
+ - Note that we're using a secret in our jwtArgs - this doesn't need to be anything special right now, but it's not particularly good practice to be storing these sorts of things in source code, if that source is ever going to be hosted outside of your network (as is our case here, on GitHub). We'll get back to how to remedy this in another part of this tutorial.
  - In the 'basicAuth' and 'jwtAuth' functions, the 'done' argument is a function pointer that works somewhat like the resolve function pointer given to Promises. The first argument is an error, and the second is the result. In our cases above, we don't throw any errors, so we always pass null in as the first argument.
+ - We require functions to serialize and deserialize users to and from our JWT. In our case, our user object is light enough that we're just using the full user object. If our user objects start to contain more information that we aren't really concerned about in the majority of cases, then we'd use the serializeUser function to construct a lighter object that contains only the subset of important information that we want to save, and then use the deserialize method to either do a database lookup to return the full user if we want, or just return the lighter user object.
+
+We're reading our JWT from cookies, so we'll need to allow express to read cookies using the CookieParser module:
+```
+npm install --save cookie-parser
+```
+And in app.js:
+...
+const cookieParser = require('cookie-parser');
+...
+app.use(cookieParser());
+```
 
 To use passport, we also need to call an initialisation method in our app.js (note that the initialised passport object must be given to the app object before our endpoint routing is configured - see the full app.js file for the full setup):
 ```
@@ -683,3 +726,455 @@ function authTest(req, res) {
 }
 ```
 And that's it. The authTest function will only be called if authentication was successful (ie. if the argument supplied to the 'done' function in the authentication strategy was truthy). If so, then the argument passed to the 'done' function (in our case, the full user object) is available on the req object under the key 'user'. As you can see in the example above, this means that we can inspect which user has called our protected endpoints, and we do so by returning the authenticated user's username. Having full access to the user object here will come in handy later on for our protected portions of the frontend.
+
+## Front End
+
+** IMPORTANT - I've changed the layout.html file as of 10/04/2019 to include the latest versions of bootstrap and jquery. I've also done a little refactoring in terms of the setup, so you'll need to copy the latest version of it from this repository if you took your version from this tutorial prior to that day. **
+
+Now that we have an authentication system in place, we can focus on a front end for users. We'll need a login page, and a users page. To start off with, inside our 'views' folder, we'll make 'login.html':
+```
+{% extends 'layout.html' %}
+
+{% block css %}
+    <link rel="stylesheet" href="//localhost:3000/css/style.css">
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="//localhost:3000/js/login_client.js"></script>
+{% endblock %}
+
+{% block title %}Login Page{% endblock %}
+
+{% block id %}login{% endblock %}
+
+{% block content %}
+    <form id="login-form">
+        <div class="row form-row justify-content-around">
+            <div class="col-12 d-flex justify-content-around">
+                <div class="label-and-field d-flex justify-content-between">
+                    <label for="username">Username</label>
+                    <input id="username" name="username">
+                </div>
+            </div>
+        </div>
+        <div class="row form-row justify-content-around">
+            <div class="col-12 d-flex justify-content-around">
+                <div class="label-and-field d-flex justify-content-between">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password">
+                </div>
+            </div>
+        </div>
+        <div class="row form-row justify-content-around">
+            <div class="col-auto">
+                <div class="submit d-flex justify-content-between">
+                    <input type="submit" id="login-submit" class="btn btn-primary">
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+```
+Here, we're using the latest version of bootstrap for a quick and easy layout. If you haven't used bootstrap before or would like to know what's going on here, I can write up a simple bootstrap tutorial for you. That said, you'd probably be better off reading their own documentation, which can be found here: https://getbootstrap.com/docs/4.0/getting-started/introduction/
+We'll also add the following to our _pages.scss:
+```
+...
+#login {
+    #login-form {
+        .form-row {
+            margin-bottom: 5px;
+            &:last-child {
+                margin-bottom: 0px;
+            }
+            .label-and-field {
+                min-width: 280px;
+                max-width: 300px;
+            }
+        }
+    }
+}
+```
+And the following to our _general.scss:
+```
+.label-and-field {
+    label {
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+}
+```
+
+With that out of the way, now we want to go ahead and write the javascript that will be responsible for submitting our data to the server. I tend to name my client side js files with a _client suffix, just so that I don't get confused between node files that run on the server and plain javascript files that run inside client browsers. So we'll go ahead and in our /public/js folder, make a file called 'login_client.js':
+```
+jQuery(document).ready(function($) {
+    $('#login-form').submit(formSubmit);
+
+    async function formSubmit(event) {
+        event.preventDefault();
+        
+        var $form = $('#login-form');
+        var username = $form.find('#username').val();
+        var password = $form.find('#password').val();
+        if (!username) {
+            alert("A username is required.");
+            return;
+        }
+        if (!password) {
+            alert("A password is required.");
+            return;
+        }
+
+        var data = {
+            "username": username,
+            "password": password
+        };
+        $.post(`${document.location.origin}/auth`, data).done(loginCallback).fail(failedLogin);
+    }
+    
+    function loginCallback(response, status) {
+        if (status === 'error') {
+            alert("An error occurred while attempting to login. Please try again later.");
+            return;
+        }
+        if (status === 'timeout') {
+            alert("Login attempt timed out. Please try again later.");
+            return;
+        }
+        if (status !== 'success') {
+            alert("An error occurred while attempting to login. Please try again later.");
+            return;
+        }
+    
+        if (response.success === true) {
+            window.location.href = "../user";
+        }
+        else if (response.success === false) {
+            alert(response.message);
+        }
+        else {
+            alert("An error occurred while attempting to login. Please try again later.");
+        }
+    }
+    
+    function failedLogin(xhr, status, error) {
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            alert(xhr.responseJSON.message);
+        }
+        else {
+            alert("An error occurred while attempting to log in. Please try again later.");
+        }
+    }
+});
+```
+Some notes on the above code:
+ - You'll notice that I've put the methods inside the on ready function. This is because the '$' alias for jQuery is only available inside of that function. You could definitely define these functions outside the on ready function, but you'd have to replace all of the '$' symbols with the full jQuery alias.
+ - We're using jQuery's 'post' method, which allows us to POST to a new '/auth' endpoint (which we'll get to next), and we include our login details as a request body. 
+ - Our new endpoint will be setting a cookie with a JWT in it, which we'll be using for authentication. We therefore redirect to the users page upon a successful login attempt, since we'll now be able to authenticate using our cookie.
+
+Since this new '/auth' endpoint isn't really an API endpoint and also definitely isn't a view endpoint, we'll create a new file in our /routes folder for general routes, called 'general.js':
+```
+const jwt = require('jsonwebtoken');
+
+const users = require('../sql/users');
+
+function routes(app) {
+    app.post('/auth', auth);
+}
+
+async function auth(req, res) {
+    let user = users.getUserByUsername(req.body.username);
+    if (!user) {
+        res.status(200).json({
+            'success': false,
+            'message': 'Username or password was incorrect.',
+        });
+        return;
+    }
+
+    let verified = await users.verifyPassword(user.password, req.body.password);
+    if (!verified) {
+        res.status(200).json({
+            'success': false,
+            'message': 'Username or password was incorrect.',
+        });
+        return;
+    }
+
+    req.login(user, { session: false }, (err) => {
+        if (err) {
+            res.status(500).send(err);
+            return;
+        }
+
+        let token = jwt.sign({ "id": user.id, "administrator": user.administrator }, 'SECRET');
+        res.cookie('jwt', token, { 'maxAge': 3600000 });
+        res.json({
+            "user": user.username,
+            "token": token,
+            "success": true,
+        });
+    });
+}
+
+module.exports = routes;
+```
+Here, we're writing an authentication function which looks up a user based on the username, and then verifies the password against that user. If either the user lookup doesn't match any users or the password verification fails, we return a message to say that authentication was not successful. Otherwise, we create a JWT with information relating to our user (in this case, just the user ID and an administrator flag) and send that back. The authentication on our front end endpoints will be taking this JWT in as a cookie, so it's useful to include any information here that could potentially be used often so that we don't have to query the database for the full user each time we want to access something, since we don't really have state between pages. The ID is there just in case we need to, though. By using the 'res.cookie' function, browsers will store the JWT as a cookie, with an expiry set to 1 hour (3,600,000ms) from now.
+
+Now that we're using jQuery to post to our server, we'll also need to make sure we allow express to parse url-encoded bodies (I spent far too long trying to figure out why my request bodies were coming through as empty before I stumbled across this one):
+```
+...
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+...
+```
+
+And finally, we hook up an endpoint for our login page in '/routes/views.js':
+```
+function routes(app) {
+    app.get('/index', index);
+
+    app.get('/login', login);
+}
+...
+function login(req, res) {
+    res.status(200).render('../views/login');
+}
+```
+
+## User Page and API Key
+
+Nex up is our user page. This will be simple for now, just listing the user's username, and an API key. For starters, we'll need to extend our user model with an API key property, which we'll make a UUID v4 (the same as a .NET GUID). To do this, we'll install the uuid module:
+```
+npm install --save uuid
+```
+And then add our property to users.js:
+```
+const credential = require('credential')();
+const uuidv4 = require('uuid/v4');
+
+const user = {
+    'id': 1,
+    'username': 'tutorial',
+    'administrator': true,
+    'apiKey': '10ba038e-48da-487b-96e8-8d3b99b6d18a',
+}
+...
+function createAPIKey() {
+    return uuidv4();
+}
+
+module.exports = {
+    'getUserByID': getUserByID,
+    'getUserByUsername': getUserByUsername,
+    'verifyPassword': verifyPassword,
+    'createAPIKey': createAPIKey
+};
+```
+For now, I'm simply hardcoding our user's API key, so that it doesn't change every time we stop and start our server.
+
+For our users page, we'll create a new file in the /views folder called 'user.html':
+```
+{% extends 'layout.html' %}
+
+{% block title %}User Page{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="//localhost:3000/css/style.css">
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="//localhost:3000/js/user_client.js"></script>
+{% endblock %}
+
+{% block id %}user{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-around">
+        <div class="col-12 col-sm-10 col-md-9 col-lg-8 col-xl-6">
+            <h3>Hello <b>{{ username }}</b></h3>
+        </div>
+    </div>
+    <div class="row justify-content-around">
+        <div class="col-12 col-sm-10 col-md-9 col-lg-8 col-xl-6">
+            <p>API Key: <b>{{ apiKey }}</b></p>
+        </div>
+    </div>
+    <div class="row justify-content-around">
+        <div class="col-auto">
+            <button id="logout-button" class="btn btn-primary">Logout</button>
+        </div>
+    </div>
+{% endblock %}
+```
+Note that we've got some variables here - 'username' and 'apiKey'. These will be defined by our endpoint handler, so that we can customise our page for each individual user.
+
+In '/routes/views.js', we'll add an endpoint for our user page (which will make use of our passport JWT authentication):
+```
+const passport = require('../passport');
+
+function routes(app) {
+    ...
+    app.get('/user', passport.authenticate('jwt', { session: false }), user);
+}
+...
+function user(req, res) {
+    res.status(200).render('../views/user', {
+        username: req.user.username,
+        apiKey: req.user.apiKey
+    });
+}
+```
+
+So now that we have a functioning login and user page, we can use a nice little trick to choose a default page depending on whether a user has an active JWT cookie or not. In our '/routes/views.js', we'll add an endpoint for the '/' address, which is our site's root address:
+```
+...
+function routes(app) {
+    app.get('/', passport.authenticate('jwt', {
+        successRedirect: '/user',
+        failureRedirect: '/login'
+    }));
+    ...
+}
+...
+```
+This means that attempting to load our site's root address will now look for our JWT cookie. If it finds one and it authenticates, then it redirects to the user page. If not, it redirects to the login screen, so users can log in.
+
+We'll also want to hook up our logout button on our user page, so we'll create another client-side js file, at '/public/js/user_client.js':
+```
+jQuery(document).ready(function($) {
+    $('#logout-button').click(function() {
+        document.cookie = 'jwt=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        window.location.href = "../";
+    });
+});
+```
+Here, we set a click handler on the logout button to set the expiry of our JWT cookie to the unix epoch, since you can't actually delete cookies. This still invalidates our cookie however, so when we redirect to our site root, we'll then be redirected to our login page.
+
+## API Access
+
+But what do we do about some sort of API usage? Users can now see their API key in the user page, so we're now able to create endpoints that require the API key in the authorization header.
+```
+npm install --save passport-headerapikey
+```
+Next up, we'll need to create a new strategy in 'passport.js':
+```
+...
+const passportAPI = require('passport-headerapikey');
+...
+const apiArgs = {
+    'header': 'Authorization',
+    'prefix': 'Api-Key'
+};
+...
+const api = new passportAPI.HeaderAPIKeyStrategy(apiArgs, false, apiAuth);
+...
+function apiAuth(apiKey, done) {
+    let user = users.getUserByAPIKey(apiKey);
+    if (!user) return done(null, false);
+
+    return done(null, user);
+}
+...
+passport.use(api);
+...
+```
+Fairly simple, we're just capturing the API key passed in the authorization header, and then doing a user lookup based on that key, which we'll define in '/sql/users.js':
+```
+...
+function getUserByAPIKey(apiKey) {
+    // TODO replace with database lookup
+    if (apiKey === user.apiKey) return user;
+
+    return false;
+}
+...
+module.exports = {
+    'getUserByID': getUserByID,
+    'getUserByUsername': getUserByUsername,
+    'getUserByAPIKey': getUserByAPIKey,
+    'verifyPassword': verifyPassword,
+    'createAPIKey': createAPIKey
+};
+```
+Now, we'll add a test endpoint into '/routes/api.js':
+```
+...
+function routes(app) {
+    ...
+    app.get('/api/keyTest', passport.authenticate('headerapikey'), keyTest);
+}
+...
+function keyTest(req, res) {
+    res.status(200).json({
+        'success': true,
+        'user': req.user.username
+    });
+}
+...
+```
+And that's it! To test in Postman, you can GET http://localhost:3000/api/keyTest, and you'll need to manually add a header yourself, with the key 'Authorization' and value 'Api-Key10ba038e-48da-487b-96e8-8d3b99b6d18a' (the module we're using seems to include any space after the 'Api-Key' as part of the api key itself, so we need to make sure there's no space in between).
+
+As a finishing touch for our login system, we'll add a loading spinner so that users know that something is happening when they click the login button. We'll add the spinner element to our base layout so that it's available on all pages, add css to our general sass file to style it, and then add some code to display it when the login page is working. To start off with, we'll add a simple div to the end of '/views/layout.html', and make it hidden by default:
+```
+...
+        <div id="loading-spinner" style="display: none;"></div>
+    </body>
+</html>
+```
+Then, we'll style it in '/scss/_general.scss':
+```
+$blue: #007bff;
+$lightGrey: #f3f3f3;
+...
+#loading-spinner {
+    border: 16px solid $lightGrey; /* Light grey */
+    border-top: 16px solid $blue; /* Blue */
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: calc(50% - 60px);
+    left: calc(50% - 60px);
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+```
+Note the use of variables for colours so that we can use them throughout. The blue we're using here is taken from the default bootstrap colours.
+The "spinner" is actually a square, with perfectly rounded corners so that it appears to be a circle. By colouring one of the sides blue and the rest grey, it appears to be a circle with one blue quarter. We simply define a spin animation that rotates in a full circle and apply that to our "circle", and then position it in the centre of the screen and we're done.
+
+Then, we just need to add some code to '/public/js/login_client.js' so that the spinner will show up while we're waiting for a response from the server:
+```
+jQuery(document).ready(function($) {
+    $('#login-form').submit(formSubmit);
+
+    async function formSubmit(event) {
+        ...
+        $.post(`${document.location.origin}/auth`, data).done(loginCallback).fail(failedLogin);
+        $('#loading-spinner').show();
+    }
+    
+    function loginCallback(response, status) {
+        $('#loading-spinner').hide();
+        ...
+    }
+
+    function failedLogin(xhr, status, error) {
+        $('#loading-spinner').hide();
+        ...
+    }
+});
+```
+And now we have a simple loading spinner on our login page whenever we're waiting for a response from the server.
+
+That's all for now. Feel free to explore other modules that you could use - for example, there are a number of templating frameworks you could use as an alternative to swig, you could use alternatives to credential for password hashing, there are modules you can use for caching (assuming a real database is involved), and many more.
+
+Let me know if you have any questions or find any issues with the tutorial, as I'm sure I've made mistakes somewhere along the way. Hope it helped!

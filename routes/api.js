@@ -6,6 +6,8 @@ function routes(app) {
     app.post('/api/postTest', postTest);
 
     app.get('/api/authTest', passport.authenticate('basic'), authTest);
+
+    app.get('/api/keyTest', passport.authenticate('headerapikey'), keyTest);
 }
 
 function test(req, res) {
@@ -36,6 +38,13 @@ function authTest(req, res) {
     res.status(200).json({
         'success': true,
         'username': req.user.username
+    });
+}
+
+function keyTest(req, res) {
+    res.status(200).json({
+        'success': true,
+        'user': req.user.username
     });
 }
 

@@ -7,3 +7,18 @@
         }
     }
 }
+
+#login {
+    #login-form {
+        .form-row {
+            margin-bottom: 5px;
+            &:last-child {
+                margin-bottom: 0px;
+            }
+            .label-and-field {
+                min-width: 280px;
+                max-width: 300px;
+            }
+        }
+    }
+}

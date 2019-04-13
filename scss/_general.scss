@@ -1,3 +1,43 @@
+$blue: #007bff;
+$lightGrey: #f3f3f3;
+
+body {
+    padding-top: 30px;
+}
+
 h1 {
     font-size: 30px;
+}
+
+.label-and-field {
+    label {
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+    input {
+        min-width: 180px;
+        max-width: 200px;
+    }
+}
+
+#loading-spinner {
+    border: 16px solid $lightGrey; /* Light grey */
+    border-top: 16px solid $blue; /* Blue */
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: calc(50% - 60px);
+    left: calc(50% - 60px);
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(-45deg);
+    }
+    100% {
+        transform: rotate(315deg);
+    }
 }

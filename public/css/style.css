@@ -1,7 +1,46 @@
+body {
+  padding-top: 30px; }
+
 h1 {
   font-size: 30px; }
+
+.label-and-field label {
+  margin-top: auto;
+  margin-bottom: auto; }
+
+.label-and-field input {
+  min-width: 180px;
+  max-width: 200px; }
+
+#loading-spinner {
+  border: 16px solid #f3f3f3;
+  /* Light grey */
+  border-top: 16px solid #007bff;
+  /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+  position: absolute;
+  top: calc(50% - 60px);
+  left: calc(50% - 60px); }
+
+@keyframes spin {
+  0% {
+    transform: rotate(-45deg); }
+  100% {
+    transform: rotate(315deg); } }
 
 #index .container {
   text-align: center; }
   #index .container h1 {
     color: blue; }
+
+#login #login-form .form-row {
+  margin-bottom: 5px; }
+  #login #login-form .form-row:last-child {
+    margin-bottom: 0px; }
+  #login #login-form .form-row .label-and-field {
+    min-width: 280px;
+    max-width: 300px; }

@@ -1,0 +1,31 @@
+{% extends 'layout.html' %}
+
+{% block title %}User Page{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="//{{ siteRoot }}/css/style.css">
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="//{{ siteRoot }}/js/user_client.js"></script>
+{% endblock %}
+
+{% block id %}user{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-around">
+        <div class="col-12 col-sm-10 col-md-9 col-lg-8 col-xl-6">
+            <h3>Hello <b>{{ username }}</b></h3>
+        </div>
+    </div>
+    <div class="row justify-content-around">
+        <div class="col-12 col-sm-10 col-md-9 col-lg-8 col-xl-6">
+            <p>API Key: <b>{{ apiKey }}</b></p>
+        </div>
+    </div>
+    <div class="row justify-content-around">
+        <div class="col-auto">
+            <button id="logout-button" class="btn btn-primary">Logout</button>
+        </div>
+    </div>
+{% endblock %}

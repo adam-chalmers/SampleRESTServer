@@ -1,21 +1,17 @@
 {% extends 'layout.html' %}
 
-{% block title %}{% endblock %}
+{% block title %}Index Page{% endblock %}
 
 {% block css %}
-    <link rel="stylesheet" href="//localhost:3000/css/style.css">
+    <link rel="stylesheet" href="//{{ siteRoot }}/css/style.css">
 {% endblock %}
 
 {% block js %}
-    <script type="text/javascript" src="//localhost:3000/js/index.js"></script>
+    <script type="text/javascript" src="//{{ siteRoot }}/js/index.js"></script>
 {% endblock %}
 
 {% block id %}index{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>{{ title }}</h1>
-        <p>Welcome to {{ title }}</p>
-        <img src="./media/wat.jpg">
-    </div>
+    <p>Welcome to {{ title }}</p>
 {% endblock %}

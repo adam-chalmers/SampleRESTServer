@@ -1,0 +1,41 @@
+{% extends 'layout.html' %}
+
+{% block css %}
+    <link rel="stylesheet" href="//{{ siteRoot }}/css/style.css">
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="//{{ siteRoot }}/js/login_client.js"></script>
+{% endblock %}
+
+{% block title %}Login Page{% endblock %}
+
+{% block id %}login{% endblock %}
+
+{% block content %}
+    <form id="login-form">
+        <div class="row form-row justify-content-around">
+            <div class="col-12 d-flex justify-content-around">
+                <div class="label-and-field d-flex justify-content-between">
+                    <label for="username">Username</label>
+                    <input id="username" name="username">
+                </div>
+            </div>
+        </div>
+        <div class="row form-row justify-content-around">
+            <div class="col-12 d-flex justify-content-around">
+                <div class="label-and-field d-flex justify-content-between">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password">
+                </div>
+            </div>
+        </div>
+        <div class="row form-row justify-content-around">
+            <div class="col-auto">
+                <div class="submit d-flex justify-content-between">
+                    <input type="submit" id="login-submit" class="btn btn-primary">
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
