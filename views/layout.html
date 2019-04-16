@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        {% set siteRoot = "192.168.0.15:3000" %}
+        {% set siteRoot = config.host + ":" + config.port %}
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}{% endblock %}</title>

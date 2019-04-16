@@ -1175,6 +1175,107 @@ jQuery(document).ready(function($) {
 ```
 And now we have a simple loading spinner on our login page whenever we're waiting for a response from the server.
 
+## Configuration
+
+I mentioned earlier that it wasn't a good idea to keep secrets in your source code, but never gave an alternative. At my current job, I was told the story about how a group managed to exploit a vulnerability in the public-facing TeamCity server, to gain access to the source code. Using this, they were able to extract a list of hardcoded secrets and administrator username/password combinations. But how do we get around this? Configuration files are the key.
+
+Storing secrets and other configuration details has multiple benefits - firstly, you don't have to worry about anyone gaining access to things like secrets, database logins, administrator information, etc. and secondly, you can easily set up debug and production environments. We'll do this by having one configuration file per environment that we want to set up, and we won't be checking them with our source control. Instead, we'll keep them one directory above our application's root directory, and refer to them in our code by relative paths. That way, any valuable information can only be discovered by gaining direct access to the server and its file system. It's a bit overkill for something like small projects, but it's always good to conform to best practices. This also lets us have a debug environment that we can set up to point to either localhost or a local IP address for local testing purposes, and a production environment that can point to a public-facing domain.
+
+To do this, we'll be using a module called dotenv:
+```
+npm install --save dotenv
+```
+And in the directory ABOVE our application root, we'll create 'development.env':
+```
+HOST=<LOCAL_IP_HERE>
+PORT=3000
+CREDENTIAL_SECRET=SECRET
+```
+And we'll create a copy of the new file in the same directory and call it 'production.env'. Note that the '<LOCAL_IP_HERE>' above should be whatever your local IP is for local debug purposes. Our production environment file can be the same, but feel free to replace the host variable with a public-facing domain name and change the port to whatever you want if you have port-forwarding set up for the machine that will be running the server.
+
+Next up, we'll need to configure Visual Studio Code to pick up on our development environment file whenever we're debugging. To do this, edit your launch.json file (this can be done by pressing ctrl + shift + P, and typing in 'launch.json' to find the right command), and modifying it to look like this:
+```
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "program": "${workspaceFolder}\\app.js",
+            "envFile": "${workspaceFolder}\\..\\development.env"
+        }
+    ]
+}
+```
+The addition we've made here is the last configuration entry: the 'envFile' value. This points Visual Studio Code to where our environment file is, which will be loaded in when we run our app. If you wanted, you could add another configuration that instead targeted the production environment file, so you could choose which environment to debug.
+
+Now, we'll create a configuration module that will read our environment file for use within our application. In our root directory, we'll create 'config.js':
+```
+const config = {
+    "host": process.env.HOST,
+    "port": process.env.PORT,
+    "credentialSecret": process.env.CREDENTIAL_SECRET
+}
+
+module.exports = config;
+```
+Fairly simple here - our environment variables are available on the process.env object, and we're simply putting them into a single object and exporting it for use within our app.
+
+We'll also need to make this available to Swig since we use our host and port in our HTML. To do this, we need to add the following at the start of our express configuration in 'app.js':
+```
+...
+const config = require('./config');
+...
+app.locals.config = config;
+...
+app.listen(config.port, () => {
+    console.log(`Server running on port ${config.port}`);
+});
+...
+```
+Here, app.locals is a set of objects that will be available in our templating engine, allowing us to make the following change in '/views/layout.html':
+```
+...
+{% set siteRoot = config.host + ":" + config.port %}
+...
+```
+Now, we're reading our host and port configurations from our environment variables and making them available to our templates for links, etc. rather than hardcoding them like we were before. Much better, especially if you don't have static IPs set up on your local network.
+
+The last change that we need to make is replacing our hardcoded secret to use our new config module. In '/passport.js':
+```
+...
+const config = require('./config');
+...
+const jwtArgs = {
+    'jwtFromRequest': cookieExtractor,
+    'secretOrKey': config.credentialSecret
+}
+...
+```
+And in '/routes/general.js':
+```
+...
+const config = require('../config');
+...
+let token = jwt.sign({ "id": user.id, "administrator": user.administrator }, config.credentialSecret);
+...
+```
+And that's it! Changing the 'development.env' file should have the changes reflected properly throughout the app. Be careful if you change the secret though, as it will invalidate any JWTs that already exist using the old secret. If you have an active cookie, I recommend going through the logout process to force its expiry and force the creation of a new JWT signed using the new secret upon logging in again.
+
+These environment files can be easily expanded to include other information. For example, if you choose to implement a proper database, you can store the database connection details in the environment files. In fact, I'd highly recommend exploring how to do this yourself as an exercise, so you can replace our single hard-coded user with a proper database of users. You could also choose to create your own user registration page too, if you want to test your understanding of what we've covered in this tutorial.
+
+## Running The App Outside Of Visual Studio Code
+
+So far, we've been debugging our server through Visual Studio Code. To run our app outside of Visual Studio Code, you'll need to run ```node -r dotenv/config app.js dotenv_config_path=../<ENVIRONMENT>.env```, where <ENVIRONMENT> is either 'development' or 'production'.Note that this assumes your terminal is running in the application root directory, otherwise you'll need to specify more specific paths for the 'app.js' and '../<ENVIRONMENT>.env' variables.
+In the above command, '-r' is an argument that allows you to 'require' modules directly for use throughout the app, and so '-r dotenv/config' is an argument that essentially replicates 'require('dotenv').config()', which is necessary to load our environment file.
+
+
+## Thanks For Following Along
+
 That's all for now. Feel free to explore other modules that you could use - for example, there are a number of templating frameworks you could use as an alternative to swig, you could use alternatives to credential for password hashing, there are modules you can use for caching (assuming a real database is involved), and many more.
 
 Let me know if you have any questions or find any issues with the tutorial, as I'm sure I've made mistakes somewhere along the way. Hope it helped!

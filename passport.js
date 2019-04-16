@@ -4,6 +4,7 @@ const passportBasic = require('passport-http');
 const passportAPI = require('passport-headerapikey');
 
 const users = require('./sql/users');
+const config = require('./config');
 
 passport.serializeUser(function(user, done) {
     // TODO create an object that is a subset of the full user object.
@@ -17,7 +18,7 @@ passport.deserializeUser(async function(user, done) {
 
 const jwtArgs = {
     'jwtFromRequest': cookieExtractor,
-    'secretOrKey': 'SECRET'
+    'secretOrKey': config.credentialSecret
 }
 
 const apiArgs = {

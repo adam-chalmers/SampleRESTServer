@@ -7,11 +7,12 @@ const passport = require('./passport');
 const general = require('./routes/general');
 const api = require('./routes/api');
 const views = require('./routes/views');
+const config = require('./config');
 
-const port = 3000;
 const app = express();
 const engine = new swig.Swig();
 
+app.locals.config = config;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -26,8 +27,8 @@ api(app);
 general(app);
 views(app);
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+app.listen(config.port, () => {
+    console.log(`Server running on port ${config.port}`);
 });
 
 

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const users = require('../sql/users');
+const config = require('../config');
 
 function routes(app) {
     app.post('/auth', auth);
@@ -31,7 +32,7 @@ async function auth(req, res) {
             return;
         }
 
-        let token = jwt.sign({ "id": user.id, "administrator": user.administrator }, 'SECRET');
+        let token = jwt.sign({ "id": user.id, "administrator": user.administrator }, config.credentialSecret);
         res.cookie('jwt', token, { 'maxAge': 3600000 });
         res.json({
             "user": user.username,
