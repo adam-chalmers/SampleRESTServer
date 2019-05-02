@@ -691,6 +691,7 @@ We're reading our JWT from cookies, so we'll need to allow express to read cooki
 npm install --save cookie-parser
 ```
 And in app.js:
+```
 ...
 const cookieParser = require('cookie-parser');
 ...
