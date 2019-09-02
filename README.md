@@ -1274,6 +1274,178 @@ These environment files can be easily expanded to include other information. For
 So far, we've been debugging our server through Visual Studio Code. To run our app outside of Visual Studio Code, you'll need to run ```node -r dotenv/config app.js dotenv_config_path=../<ENVIRONMENT>.env```, where <ENVIRONMENT> is either 'development' or 'production'.Note that this assumes your terminal is running in the application root directory, otherwise you'll need to specify more specific paths for the 'app.js' and '../<ENVIRONMENT>.env' variables.
 In the above command, '-r' is an argument that allows you to 'require' modules directly for use throughout the app, and so '-r dotenv/config' is an argument that essentially replicates 'require('dotenv').config()', which is necessary to load our environment file.
 
+## UPDATE - 02/09/2019: Further exploration of Bootstrap 4 and the grid system, as well as swig and iteration
+
+Though this isn't quite under the scope of the original tutorial, I've included an optional section that explores the Bootstrap grid system, delves a little into CSS's flex styling, and goes through the ability to iterate through JSON objects and arrays using swig. Feel free to skip it if you're not as interested in front-end development, or don't plan on using Bootstrap/swig yourself.
+
+To start off with, I've added some extra objects that we'll pass through to the User view. They're fairly standard, just arrays and objects that we'll be iterating through using swig. The first few objects/arrays are to illustrate the Bootstrap grid system and how it responds to responsive breakpoints, whereas the 'tiles' object will demonstrate a little more of what you can do with the objects being passed through to the templating engine.
+
+In /routes/views.js (adding to the existing 'user' function):
+```
+...
+function user(req, res) {
+    res.status(200).render('../views/user', {
+        username: req.user.username,
+        apiKey: req.user.apiKey,
+        simpleObject: {
+            key1: "FirstKey",
+            key2: "SecondKey",
+            key3: "ThirdKey"
+        },
+        simpleArray: [ "One", "Two", "Three", "Four", "Five" ],
+        objectArray: [
+            {
+                first: "Dog",
+                second: "Cat",
+                third: "Bird"
+            },
+            {
+                first: "Red",
+                second: "Green",
+                third: "Blue"
+            },
+            {
+                first: "Pizza",
+                second: "Burger",
+                third: "Fries"
+            }
+        ],
+        tiles: [
+            {
+                colour: "red",
+                height: 100
+            },
+            {
+                colour: "green",
+                height: 200
+            },
+            {
+                colour: "blue",
+                height: 300
+            },
+            {
+                colour: "cyan",
+                height: 200
+            },
+            {
+                colour: "magenta",
+                height: 300
+            },
+            {
+                colour: "yellow",
+                height: 100
+            },
+        ]
+    });
+}
+...
+```
+
+Now, we can use them in our user view. To do so, we'll be iterating through the new objects and arrays. When iterating through an array, you are given each element of the array in successive iterations. Fairly simple.
+
+In /views/user.html:
+```
+...
+    <div class="row justify-content-around mb-3">
+        <div class="col-auto">
+            <button id="logout-button" class="btn btn-primary">Logout</button>
+        </div>
+    </div>
+    <div class="row my-3">
+        {% for value in simpleArray %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 d-flex align-items-center justify-content-center"><strong>{{ value }}</strong></div>
+        {% endfor %}
+    </div>
+...
+```
+The for loop structure itself is fairly self-explanatory, but there's several key things to go through here. The first is the 'my-3' class given to the row. With Bootstrap, you can set margins and padding on elements that are multiples of the pre-defined spacing that it uses, to give elements on your site a consistent feel. Here, there are three components: the 'm' is for margin, the 'y' is for y-axis (top and bottom), and the '3' is for the amount of spacing (this can range from 0-5). You can read more about Bootstrap's spacing system here: https://getbootstrap.com/docs/4.3/utilities/spacing/
+
+Next up, we have a bunch of difference classes on our column div. The first group are column sizes (col-*-*). Bootstrap's grid system allows for up to 12 columns per row, with any extra columns overflowing onto the next line. You can style divs so that they take up multiples of the single-column size, and you can do this dynamically across each of Bootstrap's responsive breakpoints (more on those here: https://getbootstrap.com/docs/4.3/layout/overview/#responsive-breakpoints). So, when you see 'col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12' above, what we're saying is really the following:
+- On extra-large devices, the element will be 2 columns wide (1/6 row width)
+- On large devices, the element will be 3 columns wide (1/4 row width)
+- On medium devices, the element will be 4 columns wide (1/3 row width)
+- On small devices, the element will be 6 columns wide (1/2 row width)
+- On anything smaller, the element will be 12 columns wide (full row width)
+This allows you to easily lay elements out in a grid pattern, without worrying too much about overflow or anything else, as it's all handled for you. I'd encourage you to use your browser's dev-tools to resize the view, so you can see the breakpoints in action and see how the columns flow onto different rows. You should also fiddle around with adding new objects/elements/values to the ones we added to the user route above. You could even open the server up to your local network and access the site from your phone to see how it displays on a true mobile device, if you wanted.
+
+Then, we have the 'd-flex' class. This simply applies 'display: flex;' to the element (if you're not familiar with display: flex, do yourself a favour and check it out. It makes things far, far easier to work with and as of Bootstrap 4.0 is how they make their grid system work). This is handy for our next two classes: 'align-items-center' and 'justify-content-center'. 'align-items-center' applies 'align-items: center;' and aligns children of flex elements perpendicularly to the flex-direction (the default flex-direction is row). What this means is that in this case, 'align-items-center' will vertically centre any child elements, while keeping the child elements all in a row. 'justify-content-center' applies 'justify-content: center;' and horizontally centres all child elements of the element together. Together, they make it very easy to simply centre things both horizontally and vertically together.
+It's important to note that flex isn't supported on all browsers (and by that, I mean it's been supported in most browsers since about 2014, and is currently supported by basically everything but IE).
+
+
+When iterating through an object, you're iterating across each key/value pair that the object holds, rather than purely the values themselves. We can do basically the same thing that we did above, just also specifying the key as part of the loop. In /views/user.html:
+```
+...
+    <div class="row my-3">
+        {% for value in simpleArray %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 d-flex align-items-center justify-content-center"><strong>{{ value }}</strong></div>
+        {% endfor %}
+    </div>
+    <div class="row my-3">
+        {% for key, value in simpleObject %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 d-flex align-items-center justify-content-center"><strong>{{ key }}:</strong>&nbsp;{{ value }}</div>
+        {% endfor %}
+    </div>
+...
+```
+Nothing too special, just adding in the object key alongside the value in the loop. Using the same Bootstrap features as above, too.
+
+We can combine the two of these concepts to iterate through an array of objects, too. In /views/user.html:
+```
+...
+    <div class="row my-3">
+        {% for key, value in simpleObject %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 d-flex align-items-center justify-content-center"><strong>{{ key }}:</strong>&nbsp;{{ value }}</div>
+        {% endfor %}
+    </div>
+    <div class="row my-3">
+        <div class="col-12">
+            {% for element in objectArray %}
+                <div class="row my-2">
+                    {% for key, value in element %}
+                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 d-flex align-items-center justify-content-center">
+                            <strong>{{ key }}:</strong>&nbsp;{{ value }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+...
+```
+Here, we iterate through each element of the objectArray variable, which is an object rather than a primitive type. So we can then iterate through the objects themselves, too, to create a child grid. Note that we've chosen to put the child rows inside a full-row column, but technically we could put them inside a smaller column if we want. The overall grid size scales to the size of its container, rather than the full site-width, which means you can even put different grids side-by-side and still divide the child grids into 12 columns each if that's what you're looking for.
+
+In our last example, we iterate through a list of objects, each specifying a colour and height. We use those values in the style of child elements that we place inside columns, creating a grid of boxes that are different sizes and shapes.
+
+In /views/user.html:
+```
+...
+    <div class="row my-3">
+        <div class="col-12">
+            {% for element in objectArray %}
+                <div class="row my-2">
+                    {% for key, value in element %}
+                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 d-flex align-items-center justify-content-center">
+                            <strong>{{ key }}:</strong>&nbsp;{{ value }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="row my-3">
+        {% for tile in tiles %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 d-flex align-items-center justify-content-center my-1">
+                <div class="tile w-100" style="background-color: {{ tile.colour }}; height: {{tile.height }}px;">
+
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+...
+```
+Still nothing too new here with Bootstrap, with a few additions. We add the 'my-1' class (margin-y-1) to our columns to vertically-separate them by a small amount, which is useful on smaller devices when columns stack on top of each other. We also use the 'w-100' class on the child element we place inside each column, which applies 'width: 100%' to stretch the boxes to be the full width of each column. Without this, since the divs don't have any actual content, they'd just have width: 0 and be invisible. We then apply an inline-style to the child elements, setting their background colours and heights to be the values we passed in through in the route, and that's it!
+
+Note that you could set heights on the child elements (hence the 'tile' class I've applied) using CSS, in accordance with Bootstrap's breakpoints so that you could effectively create a grid of square tiles. You can either hard code your breakpoints manually, looking at Bootstrap's documentation to figure out what they are, or you could get Bootstrap's source SCSS files yourself and import them into your scss so that you can use their pre-defined variables rather than doing them yourself (see https://getbootstrap.com/docs/4.0/getting-started/theming/ for more info on that). I'll leave that as an exercise for you to do, but feel free to ask me any questions you have.
 
 ## Thanks For Following Along
 
